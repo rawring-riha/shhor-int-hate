@@ -1,0 +1,8 @@
+,queerphobic,communal,political,sexist,casteist,racist,ablelist
+queerphobic,0,77,83,396,71,30,19
+communal,77,0,796,836,176,48,59
+political,83,796,0,423,98,34,121
+sexist,396,836,423,0,284,148,128
+casteist,71,176,98,284,0,228,27
+racist,30,48,34,148,228,0,11
+ablelist,19,59,121,128,27,11,0
