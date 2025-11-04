@@ -1,56 +1,255 @@
-body {
-  font-family: sans-serif;
+/* ============================================
+   COLOR CUSTOMIZATION SECTION
+   Change these variables to update colors
+   ============================================ */
+:root {
+  /* Page background colors */
+  --bg-color-main: #ffffff;
+  --bg-color-alt: #f9f9f9;
+  
+  /* Text colors */
+  --text-color: #222;
+  --text-color-light: #666;
+  
+  /* Chart background */
+  --chart-bg: transparent;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+* {
   margin: 0;
   padding: 0;
-  background: #fdfdfd;
-  color: #222;
+  box-sizing: border-box;
 }
 
-header, footer {
-  text-align: center;
-  padding: 2rem 1rem;
-  background: #f5f5f5;
+body {
+  font-family: 'Fira Mode', monospace;
+  background-color: var(--bg-color-main);
+  color: var(--text-color);
+  overflow-x: hidden;
+  line-height: 1.6;
 }
 
-section {
-  margin: 3rem 0;
-  text-align: center;
+/* ============================================
+   SCROLLYTELLING LAYOUT
+   ============================================ */
+#scrolly-container {
+  position: relative;
+  width: 100%;
 }
 
-section p {
-  max-width: 600px;
-  margin: 1rem auto 2rem;
-  font-size: 1.1rem;
-}
-
-#chart-intro, #chart-sexist, #chart-political, #chart-full {
+/* Fixed chart container */
+#chart-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
+  align-items: center;
   justify-content: center;
-  margin: 0 auto;
+  z-index: 1;
+  pointer-events: none;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* When intro section is active, center the chart */
+#chart-fixed.intro-active {
+  left: 0;
+  width: 100vw;
+  justify-content: center;
+}
+
+/* When story sections are active, move chart to left */
+#chart-fixed.story-active {
+  left: 5%;
+  width: 60%;
+  justify-content: flex-start;
+}
+
+.chart {
+  width: 100%;
+  max-width: 700px;
+  height: 700px;
+  position: relative;
+  pointer-events: auto;
+}
+
+/* ============================================
+   TEXT SECTIONS
+   ============================================ */
+#text-container {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .story-section {
+  min-height: 100vh;
   display: flex;
-  gap: 2rem;
   align-items: center;
-  padding: 4rem 2rem;
-  border-bottom: 1px solid #eee;
-}
-
-.chart-wrap {
-  flex: 0 0 55%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
+  pointer-events: none;
 }
 
 .story-text {
-  flex: 1;
-  max-width: 480px;
-  padding-right: 1rem;
+  pointer-events: auto;
+  padding: 2rem 3rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  opacity: 0.3;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-@media (max-width: 900px) {
-  .story-section { flex-direction: column; }
-  .chart-wrap, .story-text { width: 100%; }
+.story-section.active .story-text {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Grayscale intro - centered */
+.story-section[data-step="grayscale"] {
+  justify-content: center;
+}
+
+.intro-text {
+  text-align: center;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.intro-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.intro-text p {
+  font-size: 1.1rem;
+  color: var(--text-color-light);
+  line-height: 1.8;
+}
+
+/* Story sections - right aligned */
+.story-section[data-step="intro"],
+.story-section[data-step="sexist"],
+.story-section[data-step="political"],
+.story-section[data-step="full"] {
+  justify-content: flex-end;
+  padding-right: 5%;
+}
+
+.story-section[data-step="intro"] .story-text,
+.story-section[data-step="sexist"] .story-text,
+.story-section[data-step="political"] .story-text,
+.story-section[data-step="full"] .story-text {
+  margin-right: 5%;
+}
+
+.story-text h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+}
+
+.story-text p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-color-light);
+}
+
+/* ============================================
+   TEXT-ONLY CONCLUSION SECTION
+   ============================================ */
+.text-only-section {
+  width: 100vw;
+  height: 1000vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  position: relative;
+  z-index: 5;
+}
+
+.conclusion-text {
+  width: 90%;
+  max-width: 1200px;
+  height: 90%;
+  padding: 4rem;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+
+.conclusion-text h2 {
+  font-size: 2.2rem;
+  margin-bottom: 2rem;
+  color: var(--text-color);
+}
+
+.conclusion-text p {
+  font-size: 1.15rem;
+  line-height: 1.9;
+  color: var(--text-color-light);
+  margin-bottom: 1.5rem;
+}
+
+.conclusion-text p:last-child {
+  margin-bottom: 0;
+}
+
+.spacer {
+  height: 50vh;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1024px) {
+  #chart-fixed.story-active {
+    position: relative;
+    left: 0;
+    width: 100vw;
+    height: 60vh;
+    justify-content: center;
+  }
+  
+  .story-section[data-step="intro"],
+  .story-section[data-step="sexist"],
+  .story-section[data-step="political"],
+  .story-section[data-step="full"] {
+    justify-content: center;
+    padding-right: 0;
+  }
+  
+  .intro-text h1 {
+    font-size: 2rem;
+  }
+  
+  .conclusion-text {
+    padding: 2rem;
+  }
+  
+  .conclusion-text h2 {
+    font-size: 1.8rem;
+  }
+}
+
+/* ============================================
+   SVG STYLES
+   ============================================ */
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+svg text {
+  font-family: 'Fira Mode', monospace;
 }

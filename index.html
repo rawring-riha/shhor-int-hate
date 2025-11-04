@@ -2,61 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hate Speech Co-occurrence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chord Diagram Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Hate Speech Co-occurrence Data Story</h1>
-  </header>
 
-  <section class="story-section" data-step="intro">
-  <div class="chart-wrap">
-    <div class="chart" id="chart-intro"></div>
+  <!-- Main scrollytelling container -->
+  <div id="scrolly-container">
+    
+    <!-- Fixed chart that stays in place -->
+    <div id="chart-fixed">
+      <div class="chart"></div>
+    </div>
+    
+    <!-- Scrolling text sections -->
+    <div id="text-container">
+      
+      <!-- 1. Grayscale intro with text overlay -->
+      <section class="story-section" data-step="grayscale">
+        <div class="story-text intro-text">
+          <h1>Intersections of Hate</h1>
+          <p>This visualization explores the connections between different types of hate speech. Scroll to explore the patterns.</p>
+        </div>
+      </section>
+
+      <!-- 2. Intro - colored rings only -->
+      <section class="story-section" data-step="intro">
+        <div class="story-text">
+          <h2>Types of Hate Speech</h2>
+          <p>Hate speech manifests in various forms - from sexist and racist attacks to religious and political targeting. Each category represents a distinct pattern of discrimination in our data.</p>
+        </div>
+      </section>
+
+      <!-- 3. Sexist focus -->
+      <section class="story-section" data-step="sexist">
+        <div class="story-text">
+          <h2>Sexist Hate Speech</h2>
+          <p>Sexist hate speech shows strong connections with other forms of discrimination. The highlighted ribbons reveal how gender-based hatred often intersects with political and communal targeting.</p>
+        </div>
+      </section>
+
+      <!-- 4. Political-Communal focus -->
+      <section class="story-section" data-step="political">
+        <div class="story-text">
+          <h2>Political & Communal</h2>
+          <p>Political and communal hate speech are deeply intertwined. These categories show the highest co-occurrence, revealing how political discourse often exploits communal divisions.</p>
+        </div>
+      </section>
+
+      <!-- 5. Full interactive chart -->
+      <section class="story-section" data-step="full">
+        <div class="story-text">
+          <h2>The Complete Picture</h2>
+          <p>Explore all connections interactively. Hover over any category to see its relationships with others. The thickness of each ribbon represents the strength of the connection.</p>
+        </div>
+      </section>
+      
+      <!-- 6. Text-only conclusion section -->
+      <section class="text-only-section">
+        <div class="conclusion-text">
+          <h2>Understanding the Intersections</h2>
+          <p>This analysis reveals that hate speech rarely exists in isolation. The interconnected nature of these categories suggests that addressing one form of discrimination requires understanding its relationship with others.</p>
+          
+          <p>The data shows particularly strong connections between political and communal hate speech, indicating how divisive rhetoric often leverages existing social fault lines. Meanwhile, sexist hate speech appears across multiple contexts, demonstrating its pervasive nature.</p>
+          
+          <p>By visualizing these patterns, we can better understand the complexity of online hate and develop more effective strategies for combating it. The chord diagram makes clear that hate speech is not just a collection of isolated incidents, but a web of interconnected behaviors that reinforce each other.</p>
+        </div>
+      </section>
+      
+      <!-- Spacer for final scroll -->
+      <div class="spacer"></div>
+    </div>
   </div>
-  <aside class="story-text" id="text-intro">
-    <!-- Add your explanatory text/image anchor here -->
-    <h2>Intersections of hate</h2>
-    <p>Short intro text…</p>
-  </aside>
-</section>
 
-<section class="story-section" data-step="sexist">
-  <div class="chart-wrap">
-    <div class="chart" id="chart-sexist"></div>
-  </div>
-  <aside class="story-text" id="text-sexist">
-    <h2>Sexist hate speech</h2>
-    <p>Explain intersections…</p>
-  </aside>
-</section>
-
-<section class="story-section" data-step="political">
-  <div class="chart-wrap">
-    <div class="chart" id="chart-political"></div>
-  </div>
-  <aside class="story-text" id="text-political">
-    <h2>Political + Communal</h2>
-    <p>Explain intersections…</p>
-  </aside>
-</section>
-
-<section class="story-section" data-step="full">
-  <div class="chart-wrap">
-    <div class="chart" id="chart-full"></div>
-  </div>
-  <aside class="story-text" id="text-full">
-    <h2>Full co-occurrence</h2>
-    <p>Detailed notes, methodology, etc.</p>
-  </aside>
-</section>
-
-
-  <footer>
-    <p>Methodology & Data: Shhorai Project</p>
-  </footer>
-
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
