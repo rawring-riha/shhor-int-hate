@@ -26,16 +26,15 @@ function clear(node) { d3.select(node).selectAll("*").remove(); }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
 // Load data
-d3.csv("data/matrix.csv").then(data => {
+d3.csv("data/matrix_percentages.csv").then(data => {
   const labels = data.columns.slice(1);
   const matrix = data.map(d => labels.map(k => +d[k] || 0));
-  const total = d3.sum(matrix.flat());
 
   const chartFixed = document.getElementById('chart-fixed');
   const chartDiv = chartFixed.querySelector('.chart');
 
   // initial render
-  renderChord(chartDiv, labels, matrix, total, "grayscale");
+  renderChord(chartDiv, labels, matrix,  "grayscale");
 
   // Observer for scrollytelling
   const sections = document.querySelectorAll('.story-section');
@@ -56,7 +55,7 @@ d3.csv("data/matrix.csv").then(data => {
       }
 
       if (step !== currentStep) {
-        updateChordTransition(chartDiv, labels, matrix, total, step);
+        updateChordTransition(chartDiv, labels, matrix,  step);
         currentStep = step;
       }
     });
@@ -72,7 +71,7 @@ d3.csv("data/matrix.csv").then(data => {
 /* -----------------------
    RENDER / STRUCTURE
    ----------------------- */
-function renderChord(containerNode, labels, matrix, total, step) {
+function renderChord(containerNode, labels, matrix,  step) {
   const container = d3.select(containerNode);
   const width = CFG.WIDTH;
   const height = CFG.HEIGHT;
@@ -133,8 +132,7 @@ function renderChord(containerNode, labels, matrix, total, step) {
   ribbonPaths.append("title")
     .text(d => {
       if (!d?.source || !d?.target) return "";
-      const pct = (d.source.value / total) * 100;
-      return `${labels[d.source.index]} → ${labels[d.target.index]}: ${pct.toFixed(2)}%`;
+      return `${labels[d.source.index]} → ${labels[d.target.index]}: ${d.source.value.toFixed(2)}%`;
     });
 
   // initial styling
@@ -174,11 +172,11 @@ function createGradients(defs, chords, labels, color, innerRadius) {
 /* -----------------------
    UPDATE (no re-render) — robust selectors by class
    ----------------------- */
-function updateChordTransition(containerNode, labels, matrix, total, step) {
+function updateChordTransition(containerNode, labels, matrix,  step) {
   const container = d3.select(containerNode);
   const svg = container.select("svg");
   if (svg.empty()) {
-    renderChord(containerNode, labels, matrix, total, step);
+    renderChord(containerNode, labels, matrix,  step);
     return;
   }
 
