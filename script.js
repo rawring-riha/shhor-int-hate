@@ -26,47 +26,125 @@ function clear(node) { d3.select(node).selectAll("*").remove(); }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
 // Load data
-d3.csv("data/matrix_percentages.csv").then(data => {
-  const labels = data.columns.slice(1);
-  const matrix = data.map(d => labels.map(k => +d[k] || 0));
+import { SUPABASE_URL, SUPABASE_KEY, PRIVATE_BUCKET, PUBLIC_BUCKET } from "./config.js";
 
-  const chartFixed = document.getElementById('chart-fixed');
-  const chartDiv = chartFixed.querySelector('.chart');
+// =============== SUPABASE HELPERS ===============
 
-  // initial render
-  renderChord(chartDiv, labels, matrix,  "grayscale");
+async function getSignedUrl(filename) {
+  const res = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/sign/${PRIVATE_BUCKET}/${filename}`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ expiresIn: 3600 }),
+    }
+  );
 
-  // Observer for scrollytelling
-  const sections = document.querySelectorAll('.story-section');
-  let currentStep = "grayscale";
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const step = entry.target.dataset.step;
-      sections.forEach(s => s.classList.remove('active'));
-      entry.target.classList.add('active');
+  const text = await res.text();
+  console.log("Signed URL raw response:", text);   // 🧪 debugging
 
-      if (step === "grayscale") {
-        chartFixed.classList.remove('story-active');
-        chartFixed.classList.add('intro-active');
-      } else {
-        chartFixed.classList.remove('intro-active');
-        chartFixed.classList.add('story-active');
+  if (!res.ok) {
+    throw new Error(`Signed URL request failed: ${res.status}`);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.error("JSON parse error:", e);
+    throw new Error("Failed to decode Supabase JSON");
+  }
+
+  console.log("Signed URL object:", data);         // 🧪 debugging
+
+  // Supabase sometimes returns absolute or relative URLs
+  const signed = data.signedURL;
+
+  if (!signed) throw new Error("No signed URL returned by Supabase");
+
+  // If absolute URL, return directly
+  if (signed.startsWith("http")) return signed;
+
+  // If relative, prepend base URL
+  return `${SUPABASE_URL}/storage/v1${signed}`;
+}
+
+async function loadPublicJSON(filename) {
+  const url = `${SUPABASE_URL}/storage/v1/object/public/${PUBLIC_BUCKET}/${filename}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to load public JSON: ${filename}`);
+  }
+  return res.json();
+}
+
+
+// =========================
+// MAIN INITIALIZATION
+// =========================
+
+(async function init() {
+  try {
+    const signedCountsUrl = await getSignedUrl("counts.json");
+    const countsData = await fetch(signedCountsUrl).then((r) => r.json());
+
+    const pctColumn = await loadPublicJSON("percentage_column.json");
+    const pctGlobal = await loadPublicJSON("percentage_global.json");
+
+    const labels = countsData.columns;
+    const matrix = countsData.data;
+
+    window.pctColMatrix = pctColumn.data;
+    window.pctGlobalMatrix = pctGlobal.data;
+
+    const chartFixed = document.getElementById("chart-fixed");
+    const chartDiv = chartFixed.querySelector(".chart");
+
+    renderChord(chartDiv, labels, matrix, "grayscale");
+
+    const sections = document.querySelectorAll(".story-section");
+    let currentStep = "grayscale";
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const step = entry.target.dataset.step;
+
+          sections.forEach((s) => s.classList.remove("active"));
+          entry.target.classList.add("active");
+
+          if (step === "grayscale") {
+            chartFixed.classList.remove("story-active");
+            chartFixed.classList.add("intro-active");
+          } else {
+            chartFixed.classList.remove("intro-active");
+            chartFixed.classList.add("story-active");
+          }
+
+          if (step !== currentStep) {
+            updateChordTransition(chartDiv, labels, matrix, step);
+            currentStep = step;
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "-25% 0px -25% 0px",
+        threshold: 0.4,
       }
+    );
 
-      if (step !== currentStep) {
-        updateChordTransition(chartDiv, labels, matrix,  step);
-        currentStep = step;
-      }
-    });
-  }, {
-    root: null,
-    rootMargin: CFG.OBS_ROOT_MARGIN,
-    threshold: clamp(CFG.OBS_THRESHOLD, 0, 1)
-  });
+    sections.forEach((s) => observer.observe(s));
+  } catch (err) {
+    console.error("Failed to initialize:", err);
+  }
+})();
 
-  sections.forEach(s => observer.observe(s));
-}).catch(err => console.error("Failed to load CSV:", err));
 
 /* -----------------------
    RENDER / STRUCTURE
@@ -130,10 +208,22 @@ function renderChord(containerNode, labels, matrix,  step) {
     .attr("class", "chord-ribbon");
 
   ribbonPaths.append("title")
-    .text(d => {
-      if (!d?.source || !d?.target) return "";
-      return `${labels[d.source.index]} → ${labels[d.target.index]}: ${d.source.value.toFixed(2)}%`;
-    });
+  .text(d => {
+    if (!d?.source || !d?.target) return "";
+
+    const i = d.source.index;
+    const j = d.target.index;
+
+    const colPct = window.pctColMatrix[i][j] || 0;
+    const globalPct = window.pctGlobalMatrix[i][j] || 0;
+
+    return `
+${labels[i]} → ${labels[j]}
+Column %: ${colPct.toFixed(2)}%
+Global %: ${globalPct.toFixed(2)}%
+`.trim();
+  });
+
 
   // initial styling
   applyStepStyling(svg, labels, color, step, false);
