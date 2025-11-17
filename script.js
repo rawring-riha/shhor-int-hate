@@ -166,6 +166,30 @@ function renderChord(containerNode, labels, matrix,  step) {
     .attr("height", height)
     .attr("viewBox", [-width/2, -height/2, width, height])
     .attr("class", "chord-svg");
+  
+  // Center text group
+  const center = svg.append("g")
+  .attr("class", "center-text")
+  .attr("text-anchor", "middle")
+  .attr("dominant-baseline", "middle")
+  .style("opacity", 0);   // initially hidden
+
+  center.append("text")
+    .attr("y", -10)
+    .attr("class", "center-main")
+    .style("font-size", "22px")
+    .style("font-weight", "600")
+    .style("fill", "#444")
+    .text("Shhor focuses on 8 types of hate");
+
+  center.append("text")
+    .attr("y", 25)
+    .attr("class", "center-sub")
+    .style("font-size", "14px")
+    .style("fill", "#777")
+    .style("cursor", "pointer")
+    .text("See methodology for definitions");
+
 
   // defs for gradients
   const defs = svg.append("defs");
@@ -210,6 +234,10 @@ function renderChord(containerNode, labels, matrix,  step) {
   ribbonPaths.append("title")
   .text(d => {
     if (!d?.source || !d?.target) return "";
+
+  // layer for static tooltips (added once)
+  svg.append("g").attr("class", "static-tooltips");
+
 
     const i = d.source.index;
     const j = d.target.index;
@@ -289,23 +317,33 @@ function updateChordTransition(containerNode, labels, matrix,  step) {
 function applyStepStyling(svg, labels, color, step, withTransition = false) {
   const duration = withTransition ? CFG.TRANSITION_MS : 0;
 
-  // select fresh elements each call
+  const centerText = svg.select(".center-text");
+
+
   const groups = svg.selectAll("g.chord-groups .chord-group");
-  const ribbonPathsAll = svg.selectAll("g.chord-ribbons .chord-ribbon");
-  const ribbonPaths = ribbonPathsAll.filter(d => d && d.source && d.target);
+  const ribbonsAll = svg.selectAll("g.chord-ribbons .chord-ribbon");
+  const ribbons = ribbonsAll.filter(d => d && d.source && d.target);
 
-  // reset listeners
-  groups.on("mouseover", null).on("mouseout", null);
+  const idxSexist = labels.indexOf("sexist");
+  const idxPolitical = labels.indexOf("political");
+  const idxCommunal = labels.indexOf("communal");
 
-  const safeFillGradient = d => {
-    if (!d?.source || !d?.target) return "#ccc";
-    return `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`;
-  };
+  const highSexist = [
+    labels.indexOf("political"),
+    labels.indexOf("communal"),
+    labels.indexOf("casteist"),
+    labels.indexOf("queerphobic")
+  ];
+
+  const lowSexist = [
+    labels.indexOf("racist"),
+    labels.indexOf("ablelist")
+  ];
 
   if (step === "grayscale") {
-    ribbonPaths.transition().duration(duration)
-      .attr("fill-opacity", 0.3)
+    ribbons.transition().duration(duration)
       .attr("fill", "#ccc")
+      .attr("fill-opacity", 0.3)
       .attr("pointer-events", "none");
 
     groups.selectAll("path").transition().duration(duration)
@@ -315,9 +353,15 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
     groups.selectAll("text").transition().duration(duration)
       .style("fill", "#999");
 
-  } else if (step === "intro") {
-    // only color arcs; hide ribbons completely
-    ribbonPaths.transition().duration(duration)
+    centerText.transition().duration(duration)
+      .style("opacity", 0);
+
+
+    return;
+  }
+
+  if (step === "intro") {
+    ribbons.transition().duration(duration)
       .attr("fill-opacity", 0)
       .attr("pointer-events", "none");
 
@@ -328,42 +372,100 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
     groups.selectAll("text").transition().duration(duration)
       .style("fill", "#222");
 
-  } else if (step === "sexist") {
-    const idx = labels.indexOf("sexist");
-    if (idx === -1) return;
+    centerText.transition().duration(duration)
+      .style("opacity", 1);
 
-    ribbonPaths.transition().duration(duration)
-      .attr("fill-opacity", d => (d.source.index === idx || d.target.index === idx ? 0.95 : 0.08))
-      .attr("fill", d => (d.source.index === idx || d.target.index === idx ? safeFillGradient(d) : "#ccc"))
-      .attr("pointer-events", d => (d.source.index === idx || d.target.index === idx ? "auto" : "none"));
+    return;
+  }
+
+  if (step === "sexist") {
+    ribbons.transition().duration(duration)
+      .attr("fill", d => `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`)
+      .attr("fill-opacity", d => {
+        const i = d.source.index;
+        const j = d.target.index;
+
+        const touchesSexist = (i === idxSexist || j === idxSexist);
+
+        if (!touchesSexist) return 0.02;
+
+        const otherSide = (i === idxSexist ? j : i);
+
+        if (highSexist.includes(otherSide)) return 1.0;
+        if (lowSexist.includes(otherSide)) return 0.4;
+
+        return 0.1; // fallback
+      })
+      .attr("pointer-events", d => {
+        const i = d.source.index;
+        const j = d.target.index;
+        return (i === idxSexist || j === idxSexist) ? "auto" : "none";
+      });
 
     groups.selectAll("path").transition().duration(duration)
-      .attr("fill", d => (d.index === idx ? color(labels[d.index]) : "#ccc"))
-      .attr("fill-opacity", d => (d.index === idx ? 0.95 : 0.5));
+      .attr("fill", d => (d.index === idxSexist ? color(labels[d.index]) : "#ccc"))
+      .attr("fill-opacity", d => (d.index === idxSexist ? 1 : 0.5));
 
     groups.selectAll("text").transition().duration(duration)
-      .style("fill", d => (d.index === idx ? "#222" : "#999"));
+      .style("fill", d => (d.index === idxSexist ? "#222" : "#999"));
 
-  } else if (step === "political") {
-    const idx1 = labels.indexOf("political");
-    const idx2 = labels.indexOf("communal");
 
-    ribbonPaths.transition().duration(duration)
-      .attr("fill-opacity", d => ([idx1, idx2].includes(d.source.index) || [idx1, idx2].includes(d.target.index) ? 0.95 : 0.08))
-      .attr("fill", d => ([idx1, idx2].includes(d.source.index) || [idx1, idx2].includes(d.target.index) ? safeFillGradient(d) : "#ccc"))
-      .attr("pointer-events", d => ([idx1, idx2].includes(d.source.index) || [idx1, idx2].includes(d.target.index) ? "auto" : "none"));
+    centerText.transition().duration(duration)
+      .style("opacity", 0);
+
+    drawStaticTooltips(svg, labels, color, step);
+    return;
+  }
+
+  if (step === "political") {
+    ribbons.transition().duration(duration)
+      .attr("fill", d => `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`)
+      .attr("fill-opacity", d => {
+        const i = d.source.index;
+        const j = d.target.index;
+
+        const touchesP = (i === idxPolitical || j === idxPolitical);
+        const touchesC = (i === idxCommunal || j === idxCommunal);
+
+        if (touchesP && touchesC) return 1.0;   // direct P-C link
+        if (touchesP || touchesC) return 0.4;   // touches P or C
+        return 0.02;                            // neither
+      })
+      .attr("pointer-events", d => {
+        const i = d.source.index;
+        const j = d.target.index;
+        return (i === idxPolitical || j === idxPolitical || i === idxCommunal || j === idxCommunal)
+          ? "auto"
+          : "none";
+      });
 
     groups.selectAll("path").transition().duration(duration)
-      .attr("fill", d => ([idx1, idx2].includes(d.index) ? color(labels[d.index]) : "#ccc"))
-      .attr("fill-opacity", d => ([idx1, idx2].includes(d.index) ? 0.95 : 0.5));
+      .attr("fill", d => (
+        d.index === idxPolitical || d.index === idxCommunal
+          ? color(labels[d.index])
+          : "#ccc"
+      ))
+      .attr("fill-opacity", d => (
+        d.index === idxPolitical || d.index === idxCommunal ? 1 : 0.5
+      ));
 
     groups.selectAll("text").transition().duration(duration)
-      .style("fill", d => ([idx1, idx2].includes(d.index) ? "#222" : "#999"));
+      .style("fill", d =>
+        (d.index === idxPolitical || d.index === idxCommunal ? "#222" : "#999")
+      );
 
-  } else if (step === "full") {
-    ribbonPathsAll.transition().duration(duration)
+    centerText.transition().duration(duration)
+      .style("opacity", 0);
+
+    drawStaticTooltips(svg, labels, color, step);
+
+    return;
+  }
+
+  if (step === "full") {
+    ribbons.transition().duration(duration)
+      .attr("fill", d => `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`)
       .attr("fill-opacity", 0.9)
-      .attr("fill", d => safeFillGradient(d))
       .attr("pointer-events", "auto");
 
     groups.selectAll("path").transition().duration(duration)
@@ -373,15 +475,141 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
     groups.selectAll("text").transition().duration(duration)
       .style("fill", "#222");
 
-    // hover interactions — always re-select valid ribbons inside handler
     groups.on("mouseover", function (_, d) {
-      svg.selectAll("g.chord-ribbons .chord-ribbon")
-        .filter(r => r && r.source && r.target)
-        .attr("fill-opacity", r => (r.source.index === d.index || r.target.index === d.index ? 0.95 : 0.08));
-    }).on("mouseout", function () {
-      svg.selectAll("g.chord-ribbons .chord-ribbon")
-        .filter(r => r && r.source && r.target)
+      ribbons.filter(r => r && r.source && r.target)
+        .attr("fill-opacity", r =>
+          (r.source.index === d.index || r.target.index === d.index ? 1 : 0.08)
+        );
+    });
+
+    groups.on("mouseout", function () {
+      ribbons.filter(r => r && r.source && r.target)
         .attr("fill-opacity", 0.9);
     });
+
+    centerText.transition().duration(duration)
+      .style("opacity", 0);
+
+    return;
   }
 }
+
+function drawStaticTooltips(svg, labels, step) {
+  const tooltipLayer = svg.select(".static-tooltips");
+  tooltipLayer.selectAll("*").remove();
+
+  const color = d3.scaleOrdinal()
+  .domain(labels)
+  .range(labels.map(l => colors[l] || '#999'));
+
+  // Gather ribbons currently rendered
+  const ribbons = svg.selectAll("g.chord-ribbons .chord-ribbon")
+    .filter(function(d) {
+      const op = +d3.select(this).attr("fill-opacity");
+      return op >= 0.99; // treat as opacity 1 ribbons
+    })
+    .data();
+
+  if (!ribbons.length) return;
+
+  // Deduplicate pairs
+  const uniquePairs = [];
+  const seen = new Set();
+
+  ribbons.forEach(d => {
+    const i = d.source.index;
+    const j = d.target.index;
+    const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniquePairs.push([i, j, d]);
+    }
+  });
+
+  const outerRadius = Math.min(CFG.WIDTH, CFG.HEIGHT) / 2 - CFG.OUTER_PADDING;
+  const offset = 40;
+
+  // Compute positions
+  const positioned = uniquePairs.map(([i, j, d]) => {
+    const angle = (d.source.startAngle + d.source.endAngle) / 2;
+
+    const x = Math.cos(angle - Math.PI/2) * (outerRadius + offset);
+    const y = Math.sin(angle - Math.PI/2) * (outerRadius + offset);
+
+    return {
+      i, j, d, angle, x, y,
+      side: (Math.cos(angle - Math.PI/2) > 0 ? "right" : "left")
+    };
+  });
+
+  // Sort by X so collision logic is predictable
+  positioned.sort((a, b) => a.y - b.y);
+
+  // Collision avoidance
+  const minGap = 22;
+  for (let k = 1; k < positioned.length; k++) {
+    if (Math.abs(positioned[k].y - positioned[k - 1].y) < minGap) {
+      positioned[k].y = positioned[k - 1].y + minGap;
+    }
+  }
+
+  // Draw each tooltip set
+  positioned.forEach((p) => {
+    const { i, j, x, y } = p;
+
+    const A = labels[i];
+    const B = labels[j];
+
+    const pctAtoB = window.pctColMatrix[i][j] || 0;
+    const pctBtoA = window.pctColMatrix[j][i] || 0;
+
+    // Connector line
+    tooltipLayer.append("line")
+      .attr("x1", Math.cos(p.angle - Math.PI/2) * outerRadius)
+      .attr("y1", Math.sin(p.angle - Math.PI/2) * outerRadius)
+      .attr("x2", x)
+      .attr("y2", y)
+      .attr("stroke", color(labels[i]))
+      .attr("stroke-width", 1.5)
+      .attr("opacity", 0.8);
+
+    const g = tooltipLayer.append("g")
+      .attr("transform", `translate(${x}, ${y})`)
+      .attr("class", "static-tooltip");
+
+    // Tooltip block
+    g.append("rect")
+      .attr("x", 0)
+      .attr("y", -28)
+      .attr("rx", 3)
+      .attr("width", 165)
+      .attr("height", 56)
+      .attr("fill", "white")
+      .attr("stroke", color(labels[i]))
+      .attr("stroke-width", 1)
+      .attr("opacity", 0.95);
+
+    // Title
+    g.append("text")
+      .attr("x", 6)
+      .attr("y", -10)
+      .attr("font-size", 12)
+      .attr("font-weight", 600)
+      .text(`${A} × ${B}`);
+
+    // Line 2
+    g.append("text")
+      .attr("x", 6)
+      .attr("y", 6)
+      .attr("font-size", 11)
+      .text(`${pctAtoB.toFixed(2)}% of ${A} is ${B}`);
+
+    // Line 3
+    g.append("text")
+      .attr("x", 6)
+      .attr("y", 20)
+      .attr("font-size", 11)
+      .text(`${pctBtoA.toFixed(2)}% of ${B} is ${A}`);
+  });
+}
+

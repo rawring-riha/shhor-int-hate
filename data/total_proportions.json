@@ -1,0 +1,30 @@
+[
+  {
+    "category":"sexist",
+    "proportion_percent":37.53
+  },
+  {
+    "category":"political",
+    "proportion_percent":25.54
+  },
+  {
+    "category":"communal",
+    "proportion_percent":12.8
+  },
+  {
+    "category":"queerphobic",
+    "proportion_percent":8.82
+  },
+  {
+    "category":"casteist",
+    "proportion_percent":7.97
+  },
+  {
+    "category":"ablelist",
+    "proportion_percent":2.2
+  },
+  {
+    "category":"racist",
+    "proportion_percent":2.15
+  }
+]
