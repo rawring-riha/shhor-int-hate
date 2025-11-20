@@ -1,23 +1,14 @@
 /* ============================================
-   COLOR CUSTOMIZATION SECTION
-   Change these variables to update colors
+   BASE STYLES
    ============================================ */
 :root {
-  /* Page background colors */
   --bg-color-main: #ffffff;
   --bg-color-alt: #f9f9f9;
-  
-  /* Text colors */
   --text-color: #222;
   --text-color-light: #666;
-  
-  /* Chart background */
   --chart-bg: transparent;
 }
 
-/* ============================================
-   BASE STYLES
-   ============================================ */
 * {
   margin: 0;
   padding: 0;
@@ -40,33 +31,27 @@ body {
   width: 100%;
 }
 
-/* Fixed chart container */
+/* Fixed chart — occupies top 70% */
 #chart-fixed {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 70vh;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-start;
+  padding-top: 3vh;
   z-index: 1;
   pointer-events: none;
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* When intro section is active, center the chart */
 #chart-fixed.intro-active {
-  left: 0;
-  width: 100vw;
   justify-content: center;
 }
 
-/* When story sections are active, move chart to left */
 #chart-fixed.story-active {
-  left: 5%;
-  width: 60%;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .chart {
@@ -87,11 +72,16 @@ body {
 }
 
 .story-section {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  position: relative;
-  pointer-events: none;
+  height: 100vh;
+  scroll-snap-align: start;
+}
+
+
+/* Grayscale section (centered intro) */
+.story-section[data-step="grayscale"] {
+  justify-content: center;
+  padding-top: 40vh;            /* centered better for intro */
+  padding-bottom: 40vh;
 }
 
 .story-text {
@@ -100,19 +90,11 @@ body {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  opacity: 0.3;
+  max-width: 800px;
+  margin: 0 auto;
+  margin-top: 2rem;
+  text-align: center;
   transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.story-section.active .story-text {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Grayscale intro - centered */
-.story-section[data-step="grayscale"] {
-  justify-content: center;
 }
 
 .intro-text {
@@ -133,22 +115,6 @@ body {
   line-height: 1.8;
 }
 
-/* Story sections - right aligned */
-.story-section[data-step="intro"],
-.story-section[data-step="sexist"],
-.story-section[data-step="political"],
-.story-section[data-step="full"] {
-  justify-content: flex-end;
-  padding-right: 5%;
-}
-
-.story-section[data-step="intro"] .story-text,
-.story-section[data-step="sexist"] .story-text,
-.story-section[data-step="political"] .story-text,
-.story-section[data-step="full"] .story-text {
-  margin-right: 5%;
-}
-
 .story-text h2 {
   font-size: 2rem;
   margin-bottom: 1.5rem;
@@ -162,7 +128,7 @@ body {
 }
 
 /* ============================================
-   TEXT-ONLY CONCLUSION SECTION
+   CONCLUSION SECTION
    ============================================ */
 .text-only-section {
   width: 100vw;
@@ -187,7 +153,6 @@ body {
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
 }
 
-
 .conclusion-text h2 {
   font-size: 2.2rem;
   margin-bottom: 2rem;
@@ -201,10 +166,6 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.conclusion-text p:last-child {
-  margin-bottom: 0;
-}
-
 .spacer {
   height: 50vh;
 }
@@ -213,37 +174,30 @@ body {
    RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 1024px) {
-  #chart-fixed.story-active {
-    position: relative;
-    left: 0;
-    width: 100vw;
+  #chart-fixed {
     height: 60vh;
-    justify-content: center;
+    padding-top: 2vh;
   }
-  
-  .story-section[data-step="intro"],
-  .story-section[data-step="sexist"],
-  .story-section[data-step="political"],
-  .story-section[data-step="full"] {
-    justify-content: center;
-    padding-right: 0;
+
+  .story-section {
+    padding-top: 62vh;
   }
-  
+
   .intro-text h1 {
     font-size: 2rem;
   }
-  
+
   .conclusion-text {
     padding: 2rem;
   }
-  
+
   .conclusion-text h2 {
     font-size: 1.8rem;
   }
 }
 
 /* ============================================
-   SVG STYLES
+   SVG
    ============================================ */
 svg {
   max-width: 100%;
@@ -252,4 +206,172 @@ svg {
 
 svg text {
   font-family: 'Fira Mode', monospace;
+}
+
+.story-section[data-step="grayscale"] {
+  min-height: 100vh;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.story-section[data-step="grayscale"] .story-text {
+  background: rgba(255, 255, 255, 0.98);
+  padding: 3rem 3.5rem;
+  max-width: 600px;
+  text-align: center;
+}
+
+.story-section:not([data-step="grayscale"]) {
+  min-height: 100vh;
+  padding-top: 72vh;   /* chart area */
+  padding-bottom: 8vh;
+}
+#chart-fixed {
+  pointer-events: none;
+}
+
+.story-text {
+  pointer-events: auto;
+}
+
+/* ============================================
+   FIXED TEXT PANEL (appears after grayscale)
+   ============================================ */
+#text-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 30vh;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2.5rem 3rem;
+  display: none;  /* hidden until intro */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 20;
+  box-shadow: 0 -6px 25px rgba(0,0,0,0.08);
+  pointer-events: auto;
+  transition: opacity 0.6s ease;
+}
+
+/* Provided for smooth fade-in */
+#text-panel.visible {
+  display: flex;
+  opacity: 1;
+}
+
+/* ============================================
+   CHART SIZE / TRANSITION
+   ============================================ */
+
+#chart-fixed {
+  transform-origin: center top;
+  transition: transform 0.7s ease, height 0.7s ease;
+}
+
+/* Large chart (grayscale) */
+#chart-fixed.large {
+  height: 90vh;
+  transform: scale(1);
+  top: 0;
+}
+
+/* Small chart (all other steps) */
+#chart-fixed.small {
+  height: 62vh;
+  transform: scale(0.78);
+  top: 0;
+}
+
+/* ============================================
+   SECTION TRIGGERS
+   ============================================ */
+
+/* Grayscale is still a full-page hero */
+.story-section[data-step="grayscale"] {
+  min-height: 100vh;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Steps 2–5: hide the section visually, but keep DOM alive */
+.story-section:not([data-step="grayscale"]) {
+  height: 100vh;
+  visibility: hidden; /* hides section but keeps its content accessible */
+  pointer-events: none;
+}
+
+.story-section:not([data-step="grayscale"]) .story-text {
+  display: none; /* prevent ghost rendering */
+}
+
+/* smooth scroll + snap */
+html, body {
+  height: 100%;
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity; /* or "mandatory" if you want hard snap */
+}
+
+/* make the sections snap to start */
+.story-section {
+  scroll-snap-align: start;
+}
+
+/* ensure the main container fills the viewport */
+#scrolly-container {
+  min-height: 100vh;
+}
+
+
+#text-panel {
+  box-shadow: none !important;
+}
+.chord-svg {
+  overflow: visible !important;
+}
+#chart-fixed.small .chart svg {
+  width: 900px !important;
+}
+#text-panel h2,
+#text-panel p {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+#text-panel {
+  text-align: center;
+}
+
+#text-panel * {
+  text-align: center;
+}
+#text-panel {
+  display: none;
+  text-align: center;
+  padding: 2rem 3rem;
+}
+
+#text-panel.visible {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#text-panel-content {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+#text-panel-content h2,
+#text-panel-content p {
+  text-align: center;
+  margin: 0 auto 1rem;
 }

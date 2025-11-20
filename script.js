@@ -102,6 +102,7 @@ async function loadPublicJSON(filename) {
     window.pctGlobalMatrix = pctGlobal.data;
 
     const chartFixed = document.getElementById("chart-fixed");
+    const textPanel = document.getElementById("text-panel");
     const chartDiv = chartFixed.querySelector(".chart");
 
     renderChord(chartDiv, labels, matrix, "grayscale");
@@ -109,41 +110,70 @@ async function loadPublicJSON(filename) {
     const sections = document.querySelectorAll(".story-section");
     let currentStep = "grayscale";
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const step = entry.target.dataset.step;
 
-          sections.forEach((s) => s.classList.remove("active"));
-          entry.target.classList.add("active");
+    // IntersectionObserver — improved but compatible with your existing logic
+    const observer = new IntersectionObserver((entries) => {
 
-          if (step === "grayscale") {
-            chartFixed.classList.remove("story-active");
-            chartFixed.classList.add("intro-active");
-          } else {
-            chartFixed.classList.remove("intro-active");
-            chartFixed.classList.add("story-active");
-          }
+      // pick the intersecting entry with the greatest intersectionRatio to avoid flicker
+      const visible = entries.filter(e => e.isIntersecting);
+      if (!visible.length) return;
+      visible.sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+      const entry = visible[0];
 
-          if (step !== currentStep) {
-            updateChordTransition(chartDiv, labels, matrix, step);
-            currentStep = step;
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "-25% 0px -25% 0px",
-        threshold: 0.4,
+      const step = entry.target.dataset.step;
+
+      // update active class on sections (keeps existing styles predictable)
+      sections.forEach((s) => s.classList.remove("active"));
+      entry.target.classList.add("active");
+
+     
+      if (step === "grayscale") {
+          chartFixed.classList.add("large");
+          chartFixed.classList.remove("small");
+      } else {
+          chartFixed.classList.add("small");
+          chartFixed.classList.remove("large");
       }
-    );
 
-    sections.forEach((s) => observer.observe(s));
-  } catch (err) {
-    console.error("Failed to initialize:", err);
-  }
-})();
+
+      // --- NEW: update/fade text panel ---
+      // hide first for a short moment so updates don't flash
+      if (step === "grayscale") {
+        // hide panel on grayscale
+        textPanel.classList.remove("visible");
+      } else {
+        // read the story-text HTML from the current section safely
+        const storyEl = entry.target.querySelector(".story-text");
+        const html = (storyEl && storyEl.innerHTML) ? storyEl.innerHTML : "";
+
+        // first hide current panel (if visible) then update & show
+        // this avoids a flash of empty content while the DOM update happens
+        textPanel.classList.remove("visible");
+
+        // small timeout to allow CSS opacity transition to complete (20-80ms)
+        setTimeout(() => {
+          textPanel.innerHTML = `<div id="text-panel-content">${html}</div>`;
+          textPanel.classList.add("visible");
+        }, 40);
+      }
+
+      // only update chart when actual step changed
+      if (step !== currentStep) {
+        updateChordTransition(chartDiv, labels, matrix, step);
+        currentStep = step;
+      }
+
+    }, {
+      root: null,
+      rootMargin: "0px 0px -60% 0px",
+      threshold: [0.25, 0.5, 0.75]   // multiple thresholds -> less noisy
+    });
+
+        sections.forEach((s) => observer.observe(s));
+      } catch (err) {
+        console.error("Failed to initialize:", err);
+      }
+    })();
 
 
 /* -----------------------
@@ -341,6 +371,8 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
   ];
 
   if (step === "grayscale") {
+    svg.select(".static-tooltips").selectAll("*").remove();
+
     ribbons.transition().duration(duration)
       .attr("fill", "#ccc")
       .attr("fill-opacity", 0.3)
@@ -361,6 +393,8 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
   }
 
   if (step === "intro") {
+    svg.select(".static-tooltips").selectAll("*").remove();
+
     ribbons.transition().duration(duration)
       .attr("fill-opacity", 0)
       .attr("pointer-events", "none");
@@ -413,11 +447,14 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
     centerText.transition().duration(duration)
       .style("opacity", 0);
 
-    drawStaticTooltips(svg, labels, color, step);
+    setTimeout(() => {
+      drawStaticTooltips(svg, labels, color, step);
+    }, duration + 30);
     return;
   }
 
   if (step === "political") {
+
     ribbons.transition().duration(duration)
       .attr("fill", d => `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`)
       .attr("fill-opacity", d => {
@@ -457,12 +494,16 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
     centerText.transition().duration(duration)
       .style("opacity", 0);
 
-    drawStaticTooltips(svg, labels, color, step);
+    setTimeout(() => {
+      drawStaticTooltips(svg, labels, color, step);
+    }, duration + 30);
 
     return;
   }
 
   if (step === "full") {
+    svg.select(".static-tooltips").selectAll("*").remove();
+
     ribbons.transition().duration(duration)
       .attr("fill", d => `url(#grad-${safe(labels[d.source.index])}-${safe(labels[d.target.index])})`)
       .attr("fill-opacity", 0.9)
@@ -494,21 +535,22 @@ function applyStepStyling(svg, labels, color, step, withTransition = false) {
   }
 }
 
-function drawStaticTooltips(svg, labels, step) {
+function drawStaticTooltips(svg, labels, color, step) {
   const tooltipLayer = svg.select(".static-tooltips");
   tooltipLayer.selectAll("*").remove();
 
-  const color = d3.scaleOrdinal()
-  .domain(labels)
-  .range(labels.map(l => colors[l] || '#999'));
 
   // Gather ribbons currently rendered
   const ribbons = svg.selectAll("g.chord-ribbons .chord-ribbon")
-    .filter(function(d) {
-      const op = +d3.select(this).attr("fill-opacity");
-      return op >= 0.99; // treat as opacity 1 ribbons
-    })
-    .data();
+  .filter(function(d) {
+    // read the computed fill-opacity from the browser, fallback to the attribute
+    const comp = window.getComputedStyle(this).getPropertyValue("fill-opacity");
+    const attr = d3.select(this).attr("fill-opacity");
+    const op = parseFloat(comp || attr || 0);
+    return op >= 0.9; // treat near-opaque as visible
+  })
+  .data();
+
 
   if (!ribbons.length) return;
 
